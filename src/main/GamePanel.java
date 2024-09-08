@@ -9,6 +9,7 @@ import java.util.Currency;
 import javax.swing.JPanel;
 
 import entity.Player;
+import tile.TileManager;
 
 
 public class GamePanel extends JPanel implements Runnable {
@@ -27,15 +28,14 @@ public class GamePanel extends JPanel implements Runnable {
 	// FPS frames per second
 	int FPS = 60;
 
+	TileManager  tileM = new TileManager(this);
+	
 	KeyHandler keyH = new KeyHandler();
 	Thread gameThread;
 	
 	Player player = new Player(this, keyH);
 
-	// Set player's default position
-	int playerX = 100;
-	int playerY = 100;
-	int playerSpeed = 4;
+
 
 	public GamePanel() {
 
@@ -158,6 +158,7 @@ public class GamePanel extends JPanel implements Runnable {
 // moved tp player component
 //		g2.setColor(Color.WHITE);
 //		g2.fillRect(playerX, playerY, tileSize, tileSize);
+		tileM.draw(g2);
 		player.draw(g2);
 		g2.dispose(); // good practice to same some memory
 		
