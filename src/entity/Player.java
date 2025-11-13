@@ -12,23 +12,29 @@ import main.GamePanel;
 import main.KeyHandler;
 
 public class Player extends Entity{
-	
+
 	GamePanel gp;
 	KeyHandler keyH;
-	
+
+	// Constants for player configuration
+	private static final int DEFAULT_X = 100;
+	private static final int DEFAULT_Y = 100;
+	private static final int DEFAULT_SPEED = 4;
+	private static final int SPRITE_ANIMATION_SPEED = 12;
+
 	public Player(GamePanel gp, KeyHandler keyH) {
 		this.gp = gp;
-		this.keyH = keyH;		
+		this.keyH = keyH;
 		setDefaultValues();
 		getPlayerImage();
 	}
-	
+
 	public void setDefaultValues() {
-		
-		x = 100 ;
-		y = 100 ;
-		
-		speed = 4;
+
+		x = DEFAULT_X;
+		y = DEFAULT_Y;
+
+		speed = DEFAULT_SPEED;
 		direction = "down";
 	}
 	
@@ -49,35 +55,62 @@ public class Player extends Entity{
 		}
 	}
 
-	
+
 	//Update get called 60 times per second
 	public void update() {
-		
+
 		if (keyH.upPressed == true || keyH.downPressed == true || keyH.leftPressed == true
 				|| keyH.rightPressed == true) {
 
+			// Store current position
+			int nextX = x;
+			int nextY = y;
+
+			// Calculate next position based on input
 			if (keyH.upPressed == true) {
 				direction = "up";
-				y -= speed;
+				nextY -= speed;
 			} else if (keyH.downPressed == true) {
 				direction = "down";
-				y += speed;
+				nextY += speed;
 			} else if (keyH.leftPressed == true) {
 				direction = "left";
-				x -= speed;
+				nextX -= speed;
 			} else if (keyH.rightPressed == true) {
 				direction = "right";
-				x += speed;
+				nextX += speed;
 			}
-			spriteCounter++;
 
-			if (spriteCounter > 12) {
+			// Check screen boundaries
+			boolean withinBounds = (nextX >= 0 && nextX <= gp.screenWidth - gp.tileSize &&
+			                        nextY >= 0 && nextY <= gp.screenHeight - gp.tileSize);
+
+			// Check tile collision at the four corners of the player sprite
+			boolean collision = false;
+			if (withinBounds) {
+				// Check all four corners of the player hitbox
+				boolean topLeft = gp.tileM.checkTileCollision(nextX, nextY);
+				boolean topRight = gp.tileM.checkTileCollision(nextX + gp.tileSize - 1, nextY);
+				boolean bottomLeft = gp.tileM.checkTileCollision(nextX, nextY + gp.tileSize - 1);
+				boolean bottomRight = gp.tileM.checkTileCollision(nextX + gp.tileSize - 1, nextY + gp.tileSize - 1);
+
+				collision = topLeft || topRight || bottomLeft || bottomRight;
+			}
+
+			// Only move if within bounds and no collision
+			if (withinBounds && !collision) {
+				x = nextX;
+				y = nextY;
+			}
+
+			// Animate sprite
+			spriteCounter++;
+			if (spriteCounter > SPRITE_ANIMATION_SPEED) {
 				if (spriteNum == 1) {
 					spriteNum = 2;
 				} else if (spriteNum == 2) {
 					spriteNum = 1;
 				}
-
 				spriteCounter = 0;
 			}
 		}
@@ -85,31 +118,9 @@ public class Player extends Entity{
 	}
 	
 	public void draw(Graphics2D g2) {
-		
-	//	g2.setColor(Color.WHITE);
-	//	g2.fillRect(x, y, gp.tileSize, gp.tileSize);
-		
-		
-		BufferedImage image = null;
-/*
-		switch (direction) {
-		case "up":
-				image = up1;
-			break;
-		case "down":
-				image = down1;
-			break;
-		case "left":
-				image = left1;
-			break;
-		case "right":
-				image = right1;
-			break;
 
-		}
-		
-	*/	
-	
+		BufferedImage image = null;
+
 		switch (direction) {
 		case "up":
 			if (spriteNum == 1) {

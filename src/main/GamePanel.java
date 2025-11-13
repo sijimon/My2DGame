@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.util.Currency;
 
 import javax.swing.JPanel;
 
@@ -19,22 +18,26 @@ public class GamePanel extends JPanel implements Runnable {
 
 	final int scale = 3;
 	public final int tileSize = originalTileSize * scale; // 48 X 48 tile
-	public final int maxScreenCol = 16;
-	public final int maxScreenRow = 12;
+	public final int maxScreenCol = 24;
+	public final int maxScreenRow = 18;
 
-	public final int screenWidth = tileSize * maxScreenCol; // 48 X16 768 pixels
-	public final int screenHeight = tileSize * maxScreenRow; // 48 X 12 576 pixels
+	public final int screenWidth = tileSize * maxScreenCol; // 48 X 24 = 1152 pixels
+	public final int screenHeight = tileSize * maxScreenRow; // 48 X 18 = 864 pixels
 
 	// FPS frames per second
 	int FPS = 60;
 
-	TileManager  tileM = new TileManager(this);
+	public TileManager  tileM = new TileManager(this);
 	
 	KeyHandler keyH = new KeyHandler();
 	Thread gameThread;
 	
 	Player player = new Player(this, keyH);
 
+	// Level system
+	public int currentLevel = 3;
+	final int maxLevel = 5;
+	boolean advanceKeyReady = true; // prevents holding Enter from triggering multiple advances
 
 
 	public GamePanel() {
@@ -53,45 +56,6 @@ public class GamePanel extends JPanel implements Runnable {
 
 	}
 
-	/*
-	@Override
-	public void run() {
-
-		double drawInterval = 1000000000 / FPS; // 0.0166 second interval
-		double nextDrawTime = System.nanoTime() + drawInterval;
-
-		while (gameThread != null) {
-
-			// System.out.println("The Game loop is running..");
-			long currentTime = System.nanoTime();
-
-			// 1. UPDATE : update informations such as character positions
-			update();
-
-			// 2. Draw: draw the screen with the updated information
-			repaint();
-
-			try {
-				double remainingTime = nextDrawTime - System.nanoTime();
-				remainingTime = remainingTime / 1000000 ;
-				
-				if(remainingTime < 0) {
-					remainingTime = 0 ;
-				}
-				Thread.sleep((long) remainingTime);
-				
-				nextDrawTime += drawInterval;
-				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		}
-
-	}
-	
-*/
-	
 	@Override
 	public void run() {
 
@@ -130,39 +94,49 @@ public class GamePanel extends JPanel implements Runnable {
 
 	}
 	
-
 	public void update() {
 
-
-  // moved to Player component
-
-		/*
-		if (keyH.upPressed == true) {
-			playerY -= playerSpeed;
-		} else if (keyH.downPressed == true) {
-			playerY += playerSpeed;
-		} else if (keyH.leftPressed == true) {
-			playerX -= playerSpeed;
-		} else if (keyH.rightPressed == true) {
-			playerX += playerSpeed;
-		}
-*/
-
 	player.update();
+
+	// Handle level advance on Enter key (single press)
+	if (keyH.enterPressed && advanceKeyReady) {
+		advanceKeyReady = false; // consume until key released
+		nextLevel();
+	}
+	if (!keyH.enterPressed) {
+		advanceKeyReady = true;
+	}
 	
 	}
 
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
-// moved tp player component
-//		g2.setColor(Color.WHITE);
-//		g2.fillRect(playerX, playerY, tileSize, tileSize);
+		// draw map and player
 		tileM.draw(g2);
 		player.draw(g2);
-		g2.dispose(); // good practice to same some memory
+
+		// draw level indicator
+		g2.setColor(Color.WHITE);
+		g2.drawString("Level: " + currentLevel, 10, 20);
+		g2.dispose(); // good practice to save some memory
 		
 
+	}
+
+	// Advance to the next level. Wraps back to 1 after maxLevel.
+	private void nextLevel() {
+		if (currentLevel < maxLevel) {
+			currentLevel++;
+		} else {
+			currentLevel = 1; // wrap to start
+		}
+		String filePath = String.format("/maps/map%02d.txt", currentLevel);
+		System.out.println("Advancing to level " + filePath);
+		tileM.loadMap(filePath);
+		// reset player position for the new level
+		player.setDefaultValues();
+		System.out.println("Loaded level " + currentLevel + " (" + filePath + ")");
 	}
 
 }
